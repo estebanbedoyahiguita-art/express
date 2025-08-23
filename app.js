@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
 
@@ -13,5 +14,5 @@ app.get('/', (req, res) =>{
 });
 
 app.listen(PORT, ()=>{
-    console.log(`Nuestra aplicación esta funcionando ${PORT}`);
+    console.log(`Servidor: http://localhost:${PORT}`);
 });
