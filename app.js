@@ -1,8 +1,13 @@
 require('dotenv').config();
+const { error } = require('console');
 const express = require('express');
 const app = express();
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
+
+const fs = require('fs');
+const path = require('path');
+const userFilePath = path.join(__dirname, 'users.json');
 
 const PORT = process.env.PORT || 3000;
 
@@ -29,7 +34,42 @@ app.get('/search', (req, res) =>{
         <p> Termino: ${terms}<p>
         <p>Categoria: ${category}<p>
     `)
-})
+});
+
+app.post('/form',(req, res)=>{
+    const name = req.body.nombre || 'Anonimo';
+    const email = req.body.email || 'No proporcionado';
+    res.json({
+        message :'Datos recibidos',
+        data:{
+            name,
+            email
+        }
+    });
+});
+
+app.post('/api/data',(req,res) => {
+
+    const data = req.body;
+    if(!data || Object.keys(data).length === 0 ){
+        return res.status(400).json({error: 'No se recibieron datos'})
+    }
+
+    res.status(201).json({
+        message: 'Datos  JSON recibidos',
+        data
+    });
+}); 
+
+app.get('/users', (req, res)=>{
+   fs.readFile(userFilePath, 'utf-8', (err, data)=>{
+    if(err){
+        return res.status(500).json({error: 'Error con la conexion de datos '});
+    }
+    const users = JSON.parse(data);
+    res.json(users);
+   });
+});
 
 app.listen(PORT, ()=>{
     console.log(`Servidor:http://localhost:${PORT}`);
