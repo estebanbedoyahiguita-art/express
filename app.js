@@ -5,6 +5,8 @@ const app = express();
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
+const {validateUser, validarUser} = require('./Utils/validation');
+
 const fs = require('fs');
 const path = require('path');
 const userFilePath = path.join(__dirname, 'users.json');
@@ -70,6 +72,56 @@ app.get('/users', (req, res)=>{
     res.json(users);
    });
 });
+
+app.post('/users',(req, res) =>{
+    const newUser = req.body;
+    fs.readFile(userFilePath, 'utf-8', (err, data) =>{
+        if(err){
+            return res.status(500).json({error: 'Error con conexión de datos.'});
+        }
+
+        const users = JSON.parse(data);
+
+        const validation = validateUser(newUser, users);
+        if (!validation.isValid){
+            return res.status(400).json({error: validation.error})
+        }
+
+        users.push(newUser);
+        fs.writeFile(userFilePath, JSON.stringify(users, null, 2), (err)=> {
+            if(err){
+                return res.status(500).json({error:'Error al guardar el usuario '});
+            }
+            res.status(201).json(newUser);
+        });
+    });
+});
+
+app.put('/users/:id', (req, res) =>{
+    const userId = parseInt(req.params.id, 10);
+    const updateUser = req.body;
+
+    fs.readFile(userFilePath, 'utf-8',(err, data) =>{
+        if(err){
+            return res.status(500).json({error: 'Error con conexión de datos.'})
+        }
+        let users = JSON.parse(data);
+
+        const validation = validateUser(updateUser, users);
+        if (!validation.isValid){
+            return res.status(400).json({error: validation.error})
+        }
+
+        users = users.map(user => user.id === userId ? {...user, ...updateUser}: user);
+
+        fs.writeFile(userFilePath, JSON.stringify(users, null, 2), (err) =>{
+            if (err){
+                return res.status(500).json({error: 'Error al actualizar usuario'})
+            }
+            res.json(updateUser);
+        })
+    })
+})
 
 app.listen(PORT, ()=>{
     console.log(`Servidor:http://localhost:${PORT}`);
