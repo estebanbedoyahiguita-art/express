@@ -6,6 +6,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const {validateUser, validarUser} = require('./Utils/validation');
+const LoggerMiddleware = require('./middlewares/logger');
+const errorHandler = require('./middlewares/errorHandler');
+
+app.use(LoggerMiddleware);
+app.use(errorHandler);
 
 const fs = require('fs');
 const path = require('path');
@@ -119,8 +124,30 @@ app.put('/users/:id', (req, res) =>{
                 return res.status(500).json({error: 'Error al actualizar usuario'})
             }
             res.json(updateUser);
-        })
-    })
+        });
+    });
+
+});
+
+app.delete('/users/:id', (req, res) =>{
+    const userId = parseInt(req.params.id, 10);
+    fs.readFile(userFilePath, 'utf-8',(err,  data) => {
+        if(err) {
+            return res.status(500).json({error: 'Error en conexión de datos'})
+        }
+        let users = JSON.parse(data);
+        users = users.filter(user =>user.id !== userId);
+        fs.writeFile(userFilePath, JSON.stringify(users, null, 2), (err)=>{
+            if(err){
+                return res.status(500).json({error: 'Error al elimininar usuario.'});
+            }
+            res.status(204).send();
+        });
+    });
+});
+
+app.get('/error', (req, res, next)=>{
+    next (new Error('Error Intencional'));
 })
 
 app.listen(PORT, ()=>{
